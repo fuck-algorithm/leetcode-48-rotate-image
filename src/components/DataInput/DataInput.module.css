@@ -1,0 +1,92 @@
+.container {
+  padding: 8px 16px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-color);
+}
+
+.input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.applyBtn {
+  padding: 6px 16px;
+  font-size: 13px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.applyBtn:hover {
+  background: #40a9ff;
+}
+
+.randomBtn {
+  padding: 6px 12px;
+  font-size: 13px;
+  background: var(--success-color);
+  color: white;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.randomBtn:hover {
+  background: #73d13d;
+}
+
+.error {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--error-color);
+}
+
+.examples {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.exampleLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.exampleBtn {
+  padding: 3px 8px;
+  font-size: 12px;
+  background: var(--bg-color);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+
+.exampleBtn:hover {
+  background: var(--highlight-color);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
