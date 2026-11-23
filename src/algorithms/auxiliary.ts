@@ -135,8 +135,8 @@ export function generateAuxiliarySteps(inputMatrix: Matrix): AnimationStep[] {
           fromCol: j,
           toRow: newRow,
           toCol: newCol,
-          label: `${matrix[i][j]}`,
-          color: '#1890ff',
+          label: `复制 ${matrix[i][j]}`,
+          color: '#287a91',
           isAuxiliary: true,
         }],
       });

@@ -1,158 +1,20 @@
-.container {
-  padding: 12px 16px;
-  background: var(--card-bg);
-  border-top: 1px solid var(--border-color);
-}
-
-.buttons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 14px;
-  font-size: 14px;
-  background: var(--bg-color);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.btn:hover {
-  background: var(--highlight-color);
-  border-color: var(--primary-color);
-}
-
-.playBtn {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-  padding: 8px 20px;
-}
-
-.playBtn:hover {
-  background: #40a9ff;
-  border-color: #40a9ff;
-}
-
-.shortcut {
-  font-size: 10px;
-  padding: 2px 4px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
-  margin-left: 2px;
-}
-
-.playBtn .shortcut {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.speedControl {
-  position: relative;
-  margin-left: 8px;
-}
-
-.speedBtn {
-  padding: 8px 12px;
-  font-size: 13px;
-  background: var(--bg-color);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.speedBtn:hover {
-  background: var(--highlight-color);
-  border-color: var(--primary-color);
-}
-
-.speedMenu {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 4px;
-  padding: 4px;
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-
-.speedOption {
-  display: block;
-  width: 100%;
-  padding: 6px 16px;
-  font-size: 13px;
-  background: transparent;
-  color: var(--text-color);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: center;
-  transition: background 0.2s;
-}
-
-.speedOption:hover {
-  background: var(--highlight-color);
-}
-
-.speedOption.active {
-  background: var(--primary-color);
-  color: white;
-}
-
-.stepInfo {
-  margin-left: 12px;
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.progressBar {
-  position: relative;
-  height: 8px;
-  background: #e8e8e8;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.progressFill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background: var(--success-color);
-  border-radius: 4px;
-  transition: width 0.1s;
-}
-
-.progressHandle {
-  position: absolute;
-  top: 50%;
-  width: 16px;
-  height: 16px;
-  background: white;
-  border: 2px solid var(--success-color);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  cursor: grab;
-  transition: transform 0.1s;
-}
-
-.progressHandle:hover {
-  transform: translate(-50%, -50%) scale(1.2);
-}
-
-.progressHandle:active {
-  cursor: grabbing;
-}
+.container { z-index: 2; display: flex; min-width: 0; height: 48px; flex: 0 0 48px; align-items: center; gap: 12px; padding: 5px 12px; border-top: 1px solid var(--border-color); background: #fbfcfa; }
+.buttons { display: flex; flex: 0 0 auto; align-items: center; gap: 5px; }
+.btn { display: flex; height: 30px; align-items: center; gap: 4px; padding: 0 8px; border: 1px solid #dce4df; border-radius: 4px; background: #f5f7f4; color: #40524a; font-size: 12px; }
+.btn:hover { border-color: var(--primary-color); background: var(--highlight-color); }
+.playBtn { border-color: #128568; background: #128568; color: white; }
+.playBtn:hover { background: #0d7058; }
+.shortcut { color: #708077; font-size: 9px; }
+.playBtn .shortcut { color: #d4eee5; }
+.speedControl { position: relative; margin-left: 2px; }
+.speedBtn { height: 30px; padding: 0 8px; border: 1px solid #dce4df; border-radius: 4px; background: #f5f7f4; color: #53635c; font-size: 11px; }
+.speedMenu { position: absolute; bottom: 100%; left: 50%; z-index: 10; padding: 4px; transform: translateX(-50%); border: 1px solid var(--border-color); border-radius: 5px; background: white; box-shadow: 0 3px 12px #20352a1a; }
+.speedOption { display: block; width: 100%; padding: 6px 12px; border-radius: 3px; background: transparent; color: #40524a; font-size: 11px; }
+.speedOption:hover, .speedOption.active { background: var(--highlight-color); color: var(--primary-color); }
+.stepInfo { margin-left: 4px; color: var(--text-secondary); font-family: 'DM Mono', monospace; font-size: 10px; white-space: nowrap; }
+.progressBar { position: relative; height: 6px; flex: 1; min-width: 30px; border-radius: 4px; background: #e4e9e5; cursor: pointer; touch-action: none; }
+.progressFill { position: absolute; top: 0; left: 0; height: 100%; border-radius: 4px; background: var(--success-color); transition: width 0.1s; }
+.progressHandle { position: absolute; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%); border: 2px solid var(--success-color); border-radius: 50%; background: white; cursor: grab; }
+.progressHandle:hover { transform: translate(-50%, -50%) scale(1.15); }
+.progressHandle:active { cursor: grabbing; }
+@media (max-width: 680px) { .container { height: 44px; flex-basis: 44px; gap: 7px; padding: 4px 7px; } .buttons { gap: 3px; } .btn { height: 28px; gap: 2px; padding: 0 6px; font-size: 11px; } .shortcut { display: none; } .speedBtn { height: 28px; padding: 0 5px; font-size: 10px; } .stepInfo { margin-left: 1px; font-size: 9px; } }

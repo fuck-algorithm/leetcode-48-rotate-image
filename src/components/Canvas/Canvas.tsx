@@ -1,379 +1,158 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
-import * as d3 from 'd3';
-import { AnimationStep, CellState, Arrow, Annotation } from '../../types';
-import styles from './Canvas.module.css';
+import { useRef, useEffect, useState, useCallback } from 'react'
+import * as d3 from 'd3'
+import { AnimationStep, CellState, Annotation } from '../../types'
+import styles from './Canvas.module.css'
 
-interface CanvasProps {
-  step: AnimationStep;
-  showAuxiliary: boolean;
-}
+interface CanvasProps { step: AnimationStep; showAuxiliary: boolean }
+interface CellDatum { id: string; row: number; col: number; value: number; x: number; y: number; highlight?: CellState['highlight']; label?: string }
+interface ArrowDatum { id: string; fromX: number; fromY: number; toX: number; toY: number; label: string; color: string; curve: boolean }
+interface LabelDatum { id: string; x: number; y: number; text: string; anchor: string; color: string }
 
-const CELL_SIZE = 60;
-const CELL_GAP = 4;
+const CELL_SIZE = 60
+const CELL_GAP = 4
+const CELL_PITCH = CELL_SIZE + CELL_GAP
+const COLORS = { source: '#287a91', target: '#128568', temp: '#bd8426', swapping: '#bf4d45', completed: '#128568' }
 
 export function Canvas({ step, showAuxiliary }: CanvasProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const n = step.matrix.length
+  const matrixWidth = n * CELL_PITCH - CELL_GAP
+  const matrixHeight = matrixWidth
 
-  const n = step.matrix.length;
-  const matrixWidth = n * (CELL_SIZE + CELL_GAP) - CELL_GAP;
-  const matrixHeight = matrixWidth;
-
-  // 绘制矩阵
   const drawMatrix = useCallback(() => {
-    if (!svgRef.current) return;
-
-    const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove();
-
-    const g = svg.append('g')
-      .attr('transform', `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`);
-
-    // 计算布局
-    const hasAux = showAuxiliary && step.auxiliaryMatrix;
-    const totalWidth = hasAux ? matrixWidth * 2 + 120 : matrixWidth;
-    const startX = -totalWidth / 2;
-    const startY = -matrixHeight / 2;
-
-    // 绘制原矩阵标题
-    g.append('text')
-      .attr('x', startX + matrixWidth / 2)
-      .attr('y', startY - 15)
-      .attr('text-anchor', 'middle')
-      .attr('fill', '#333')
-      .attr('font-size', '14px')
-      .attr('font-weight', '500')
-      .text('原矩阵');
-
-    // 绘制原矩阵
-    drawMatrixCells(g, step.matrix, startX, startY, step.highlightCells.filter(c => !c.label?.includes('辅助')), step.arrows?.filter(a => !a.isAuxiliary), step.annotations?.filter(a => !a.isAuxiliary));
-
-    // 绘制辅助矩阵
-    if (hasAux && step.auxiliaryMatrix) {
-      const auxStartX = startX + matrixWidth + 120;
-      
-      // 辅助矩阵标题
-      g.append('text')
-        .attr('x', auxStartX + matrixWidth / 2)
-        .attr('y', startY - 15)
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#333')
-        .attr('font-size', '14px')
-        .attr('font-weight', '500')
-        .text('辅助矩阵 (matrixNew)');
-
-      // 绘制箭头从原矩阵到辅助矩阵
-      const auxHighlights = step.highlightCells.filter(c => c.highlight === 'target');
-      drawMatrixCells(g, step.auxiliaryMatrix, auxStartX, startY, auxHighlights, step.arrows?.filter(a => a.isAuxiliary), step.annotations?.filter(a => a.isAuxiliary), true);
-
-      // 绘制跨矩阵箭头
-      if (step.arrows) {
-        step.arrows.filter(a => a.isAuxiliary).forEach(arrow => {
-          const fromX = startX + arrow.fromCol * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
-          const fromY = startY + arrow.fromRow * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
-          const toX = auxStartX + arrow.toCol * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
-          const toY = startY + arrow.toRow * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
-
-          // 绘制曲线箭头
-          const midX = (fromX + toX) / 2;
-          const midY = (fromY + toY) / 2 - 30;
-
-          g.append('path')
-            .attr('d', `M ${fromX} ${fromY} Q ${midX} ${midY} ${toX} ${toY}`)
-            .attr('fill', 'none')
-            .attr('stroke', arrow.color || '#1890ff')
-            .attr('stroke-width', 2)
-            .attr('marker-end', 'url(#arrowhead)');
-
-          if (arrow.label) {
-            g.append('text')
-              .attr('x', midX)
-              .attr('y', midY - 5)
-              .attr('text-anchor', 'middle')
-              .attr('fill', arrow.color || '#1890ff')
-              .attr('font-size', '12px')
-              .attr('font-weight', '500')
-              .text(arrow.label);
-          }
-        });
-      }
+    if (!svgRef.current) return
+    const svg = d3.select(svgRef.current)
+    let defs = svg.select<SVGDefsElement>('defs')
+    if (defs.empty()) defs = svg.append('defs')
+    if (defs.select('#arrowhead').empty()) {
+      defs.append('marker').attr('id', 'arrowhead').attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('refY', 0).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto').append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#128568')
     }
+    let camera = svg.select<SVGGElement>('.camera-layer')
+    if (camera.empty()) {
+      camera = svg.append('g').attr('class', 'camera-layer')
+      camera.append('g').attr('class', 'layer-arrows')
+      camera.append('g').attr('class', 'layer-nodes')
+      camera.append('g').attr('class', 'layer-labels')
+    }
+    const { width, height } = svgRef.current.getBoundingClientRect()
+    svg.attr('viewBox', `0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`)
+    const hasAux = Boolean(showAuxiliary && step.auxiliaryMatrix)
+    const totalWidth = hasAux ? matrixWidth * 2 + 120 : matrixWidth
+    const fittedScale = Math.min(width / (totalWidth + 40), height / (matrixHeight + 60), 1)
+    const cameraTransform = `translate(${width / 2 + transform.x}, ${height / 2 + transform.y}) scale(${fittedScale * transform.scale})`
+    camera.attr('transform', cameraTransform)
+    const arrowLayer = camera.select<SVGGElement>('.layer-arrows')
+    const nodeLayer = camera.select<SVGGElement>('.layer-nodes')
+    const labelLayer = camera.select<SVGGElement>('.layer-labels')
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const duration = reducedMotion ? 0 : 180
+    const startX = -totalWidth / 2
+    const startY = -matrixHeight / 2
+    const auxStartX = startX + matrixWidth + 120
+    const primaryHighlights = step.highlightCells.filter(cell => !cell.label?.includes('辅助'))
+    const cells: CellDatum[] = []
+    const labels: LabelDatum[] = []
+    const matrices = [{ data: step.matrix, x: startX, id: 'main' }]
+    if (hasAux && step.auxiliaryMatrix) matrices.push({ data: step.auxiliaryMatrix, x: auxStartX, id: 'aux' })
 
-    // 添加箭头标记定义
-    svg.append('defs').append('marker')
-      .attr('id', 'arrowhead')
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 8)
-      .attr('refY', 0)
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#1890ff');
-
-  }, [step, transform, showAuxiliary, matrixWidth, matrixHeight]);
-
-  const drawMatrixCells = (
-    g: d3.Selection<SVGGElement, unknown, null, undefined>,
-    matrix: number[][],
-    startX: number,
-    startY: number,
-    highlights: CellState[],
-    arrows?: Arrow[],
-    annotations?: Annotation[],
-    isAuxiliary = false
-  ) => {
-    const n = matrix.length;
-
-    // 绘制单元格
-    for (let i = 0; i < n; i++) {
-      for (let j = 0; j < n; j++) {
-        const x = startX + j * (CELL_SIZE + CELL_GAP);
-        const y = startY + i * (CELL_SIZE + CELL_GAP);
-        const value = matrix[i][j];
-
-        // 查找高亮状态
-        const highlight = highlights.find(h => h.row === i && h.col === j);
-        let fillColor = '#fff';
-        let strokeColor = '#d9d9d9';
-        let textColor = '#333';
-
-        if (highlight) {
-          switch (highlight.highlight) {
-            case 'source':
-              fillColor = '#e6f7ff';
-              strokeColor = '#1890ff';
-              textColor = '#1890ff';
-              break;
-            case 'target':
-              fillColor = '#f6ffed';
-              strokeColor = '#52c41a';
-              textColor = '#52c41a';
-              break;
-            case 'temp':
-              fillColor = '#fffbe6';
-              strokeColor = '#faad14';
-              textColor = '#d48806';
-              break;
-            case 'swapping':
-              fillColor = '#fff1f0';
-              strokeColor = '#ff4d4f';
-              textColor = '#ff4d4f';
-              break;
-            case 'completed':
-              fillColor = '#f6ffed';
-              strokeColor = '#52c41a';
-              textColor = '#389e0d';
-              break;
-          }
-        }
-
-        // 绘制单元格背景
-        g.append('rect')
-          .attr('x', x)
-          .attr('y', y)
-          .attr('width', CELL_SIZE)
-          .attr('height', CELL_SIZE)
-          .attr('rx', 4)
-          .attr('fill', fillColor)
-          .attr('stroke', strokeColor)
-          .attr('stroke-width', highlight ? 2 : 1);
-
-        // 绘制数值
-        g.append('text')
-          .attr('x', x + CELL_SIZE / 2)
-          .attr('y', y + CELL_SIZE / 2 + 5)
-          .attr('text-anchor', 'middle')
-          .attr('fill', textColor)
-          .attr('font-size', '16px')
-          .attr('font-weight', highlight ? '600' : '400')
-          .text(value);
-
-        // 绘制索引
-        g.append('text')
-          .attr('x', x + 4)
-          .attr('y', y + 12)
-          .attr('fill', '#999')
-          .attr('font-size', '9px')
-          .text(`[${i}][${j}]`);
-
-        // 绘制标签
-        if (highlight?.label) {
-          g.append('text')
-            .attr('x', x + CELL_SIZE / 2)
-            .attr('y', y - 6)
-            .attr('text-anchor', 'middle')
-            .attr('fill', strokeColor)
-            .attr('font-size', '11px')
-            .attr('font-weight', '500')
-            .text(highlight.label);
+    for (const matrix of matrices) {
+      labels.push({ id: `${matrix.id}-title`, x: matrix.x + matrixWidth / 2, y: startY - 15, text: matrix.id === 'main' ? '原矩阵' : '辅助矩阵 (matrixNew)', anchor: 'middle', color: '#24372e' })
+      for (let row = 0; row < matrix.data.length; row++) {
+        for (let col = 0; col < matrix.data[row].length; col++) {
+          const highlight = matrix.id === 'main'
+            ? primaryHighlights.find(cell => cell.row === row && cell.col === col)
+            : step.highlightCells.find(cell => cell.row === row && cell.col === col && cell.highlight === 'target')
+          cells.push({ id: `${matrix.id}-${row}-${col}`, row, col, value: matrix.data[row][col], x: matrix.x + col * CELL_PITCH, y: startY + row * CELL_PITCH, highlight: highlight?.highlight, label: highlight?.label })
         }
       }
     }
 
-    // 绘制内部箭头
-    if (arrows && !isAuxiliary) {
-      arrows.forEach(arrow => {
-        const fromX = startX + arrow.fromCol * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
-        const fromY = startY + arrow.fromRow * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
-        const toX = startX + arrow.toCol * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
-        const toY = startY + arrow.toRow * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
-
-        // 计算偏移以避免箭头穿过单元格中心
-        const dx = toX - fromX;
-        const dy = toY - fromY;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        const offsetX = (dx / len) * (CELL_SIZE / 2 + 5);
-        const offsetY = (dy / len) * (CELL_SIZE / 2 + 5);
-
-        g.append('line')
-          .attr('x1', fromX + offsetX)
-          .attr('y1', fromY + offsetY)
-          .attr('x2', toX - offsetX)
-          .attr('y2', toY - offsetY)
-          .attr('stroke', arrow.color || '#1890ff')
-          .attr('stroke-width', 2)
-          .attr('marker-end', 'url(#arrowhead)');
-
-        if (arrow.label) {
-          g.append('text')
-            .attr('x', (fromX + toX) / 2)
-            .attr('y', (fromY + toY) / 2 - 8)
-            .attr('text-anchor', 'middle')
-            .attr('fill', arrow.color || '#1890ff')
-            .attr('font-size', '11px')
-            .text(arrow.label);
-        }
-      });
+    const arrows: ArrowDatum[] = []
+    for (const [index, arrow] of (step.arrows ?? []).entries()) {
+      const fromX = startX + arrow.fromCol * CELL_PITCH + CELL_SIZE / 2
+      const fromY = startY + arrow.fromRow * CELL_PITCH + CELL_SIZE / 2
+      const targetX = (arrow.isAuxiliary && hasAux ? auxStartX : startX) + arrow.toCol * CELL_PITCH + CELL_SIZE / 2
+      const targetY = startY + arrow.toRow * CELL_PITCH + CELL_SIZE / 2
+      arrows.push({ id: `arrow-${index}`, fromX, fromY, toX: targetX, toY: targetY, label: arrow.label ?? '', color: arrow.color ?? '#128568', curve: Boolean(arrow.isAuxiliary && hasAux) })
+    }
+    for (const [index, annotation] of (step.annotations ?? []).entries()) {
+      if (annotation.isAuxiliary && !hasAux) continue
+      const originX = (annotation.isAuxiliary ? auxStartX : startX) + annotation.col * CELL_PITCH
+      const originY = startY + annotation.row * CELL_PITCH
+      const pos = annotationPosition(annotation, originX, originY)
+      labels.push({ id: `annotation-${index}`, x: pos.x, y: pos.y, text: annotation.text, anchor: pos.anchor, color: '#53635c' })
     }
 
-    // 绘制标注
-    if (annotations) {
-      annotations.forEach(ann => {
-        const x = startX + ann.col * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
-        const y = startY + ann.row * (CELL_SIZE + CELL_GAP);
-        
-        let textX = x;
-        let textY = y;
-        let anchor = 'middle';
+    const nodeJoin = nodeLayer.selectAll<SVGGElement, CellDatum>('g.matrix-cell').data(cells, cell => cell.id)
+    nodeJoin.exit().interrupt().transition().duration(duration).attr('opacity', 0).remove()
+    const nodeEnter = nodeJoin.enter().append('g').attr('class', 'matrix-cell').attr('data-node-id', cell => cell.id).attr('opacity', 0)
+    nodeEnter.append('rect').attr('width', CELL_SIZE).attr('height', CELL_SIZE).attr('rx', 4)
+    nodeEnter.append('text').attr('class', 'cell-value').attr('text-anchor', 'middle').attr('x', CELL_SIZE / 2).attr('y', CELL_SIZE / 2 + 5).attr('font-size', '16px')
+    nodeEnter.append('text').attr('class', 'cell-index').attr('x', 4).attr('y', 12).attr('font-size', '9px')
+    nodeEnter.append('text').attr('class', 'cell-badge').attr('text-anchor', 'middle').attr('y', -6).attr('font-size', '11px')
+    const nodeUpdate = nodeEnter.merge(nodeJoin).interrupt()
+    nodeUpdate.attr('data-status', cell => cell.highlight === 'source' ? 'current' : cell.highlight === 'target' || cell.highlight === 'temp' ? 'compare' : cell.highlight === 'completed' ? 'done' : 'idle')
+    nodeUpdate.transition().duration(duration).attr('transform', cell => `translate(${cell.x},${cell.y})`).attr('opacity', 1)
+    nodeUpdate.select('rect').transition().duration(duration).attr('fill', cell => cell.highlight ? `${COLORS[cell.highlight]}18` : '#ffffff').attr('stroke', cell => cell.highlight ? COLORS[cell.highlight] : '#cbd7d0').attr('stroke-width', cell => cell.highlight ? 2 : 1)
+    nodeUpdate.select<SVGTextElement>('.cell-value').text(cell => String(cell.value)).attr('fill', cell => cell.highlight ? COLORS[cell.highlight] : '#24372e').attr('font-weight', cell => cell.highlight ? 700 : 500)
+    nodeUpdate.select<SVGTextElement>('.cell-index').text(cell => `[${cell.row}][${cell.col}]`).attr('fill', '#829188')
+    nodeUpdate.select<SVGTextElement>('.cell-badge').text(cell => cell.label ?? '').attr('fill', cell => cell.highlight ? COLORS[cell.highlight] : '#53635c')
 
-        switch (ann.position) {
-          case 'top':
-            textY = y - 20;
-            break;
-          case 'bottom':
-            textY = y + CELL_SIZE + 15;
-            break;
-          case 'left':
-            textX = startX + ann.col * (CELL_SIZE + CELL_GAP) - 10;
-            textY = y + CELL_SIZE / 2;
-            anchor = 'end';
-            break;
-          case 'right':
-            textX = startX + ann.col * (CELL_SIZE + CELL_GAP) + CELL_SIZE + 10;
-            textY = y + CELL_SIZE / 2;
-            anchor = 'start';
-            break;
-        }
+    const arrowJoin = arrowLayer.selectAll<SVGGElement, ArrowDatum>('g.matrix-arrow').data(arrows, arrow => arrow.id)
+    arrowJoin.exit().interrupt().transition().duration(duration).attr('opacity', 0).remove()
+    const arrowEnter = arrowJoin.enter().append('g').attr('class', 'matrix-arrow').attr('opacity', 0)
+    arrowEnter.append('path').attr('fill', 'none').attr('marker-end', 'url(#arrowhead)')
+    arrowEnter.append('text').attr('text-anchor', 'middle').attr('font-size', '11px').attr('font-weight', 600).attr('paint-order', 'stroke').attr('stroke', '#fbfcfa').attr('stroke-width', 4)
+    const arrowUpdate = arrowEnter.merge(arrowJoin).interrupt().attr('data-arrow-id', arrow => arrow.id)
+    arrowUpdate.transition().duration(duration).attr('opacity', 1)
+    arrowUpdate.select('path').attr('d', arrow => arrow.curve ? `M${arrow.fromX},${arrow.fromY} Q${(arrow.fromX + arrow.toX) / 2},${(arrow.fromY + arrow.toY) / 2 - 30} ${arrow.toX},${arrow.toY}` : `M${arrow.fromX},${arrow.fromY} L${arrow.toX},${arrow.toY}`).attr('stroke', arrow => arrow.color).attr('stroke-width', 2)
+    arrowUpdate.select('text').text(arrow => arrow.label).attr('x', arrow => (arrow.fromX + arrow.toX) / 2).attr('y', arrow => (arrow.fromY + arrow.toY) / 2 - 8).attr('fill', arrow => arrow.color)
 
-        g.append('text')
-          .attr('x', textX)
-          .attr('y', textY)
-          .attr('text-anchor', anchor)
-          .attr('fill', '#666')
-          .attr('font-size', '11px')
-          .text(ann.text);
-      });
-    }
-  };
+    const labelJoin = labelLayer.selectAll<SVGTextElement, LabelDatum>('text.matrix-label').data(labels, label => label.id)
+    labelJoin.exit().interrupt().transition().duration(duration).attr('opacity', 0).remove()
+    labelJoin.enter().append('text').attr('class', 'matrix-label').attr('opacity', 0).merge(labelJoin).interrupt().attr('text-anchor', label => label.anchor).attr('font-size', '14px').attr('font-weight', 600).text(label => label.text).attr('fill', label => label.color).transition().duration(duration).attr('x', label => label.x).attr('y', label => label.y).attr('opacity', 1)
+  }, [step, transform, showAuxiliary, matrixWidth, matrixHeight])
+
+  useEffect(() => { drawMatrix() }, [drawMatrix])
 
   useEffect(() => {
-    drawMatrix();
-  }, [drawMatrix]);
+    setTransform({ x: 0, y: 0, scale: 1 })
+  }, [])
 
-  // 居中视图
-  useEffect(() => {
-    if (containerRef.current) {
-      const { width, height } = containerRef.current.getBoundingClientRect();
-      setTransform({ x: width / 2, y: height / 2, scale: 1 });
-    }
-  }, []);
-
-  // 鼠标拖拽
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setTransform(prev => ({
-      ...prev,
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
-    }));
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // 滚轮缩放
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setTransform(prev => ({
-      ...prev,
-      scale: Math.max(0.3, Math.min(3, prev.scale * delta)),
-    }));
-  };
+  const handleMouseDown = (event: React.MouseEvent) => {
+    const bounds = containerRef.current?.getBoundingClientRect()
+    if (!bounds) return
+    setIsDragging(true)
+    setDragStart({ x: event.clientX - bounds.left - transform.x, y: event.clientY - bounds.top - transform.y })
+  }
+  const handleMouseMove = (event: React.MouseEvent) => {
+    const bounds = containerRef.current?.getBoundingClientRect()
+    if (isDragging && bounds) setTransform(prev => ({ ...prev, x: event.clientX - bounds.left - dragStart.x, y: event.clientY - bounds.top - dragStart.y }))
+  }
+  const handleWheel = (event: React.WheelEvent) => { event.preventDefault(); const delta = event.deltaY > 0 ? 0.9 : 1.1; setTransform(prev => ({ ...prev, scale: Math.max(0.3, Math.min(3, prev.scale * delta)) })) }
 
   return (
-    <div 
-      ref={containerRef}
-      className={styles.container}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onWheel={handleWheel}
-    >
+    <div ref={containerRef} className={styles.container} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={() => setIsDragging(false)} onMouseLeave={() => setIsDragging(false)} onWheel={handleWheel}>
       <svg ref={svgRef} className={styles.svg} />
-      
-      <div className={styles.description}>
-        <span className={styles.stepNum}>步骤 {step.id + 1}</span>
-        <span className={styles.stepText}>{step.description}</span>
-      </div>
-
+      <div className={styles.description}><span className={styles.stepNum}>步骤 {step.id + 1}</span><span className={styles.stepText}>{step.description}</span></div>
       <div className={styles.controls}>
-        <button 
-          className={styles.controlBtn}
-          onClick={() => setTransform(prev => ({ ...prev, scale: prev.scale * 1.2 }))}
-        >
-          +
-        </button>
-        <button 
-          className={styles.controlBtn}
-          onClick={() => setTransform(prev => ({ ...prev, scale: prev.scale * 0.8 }))}
-        >
-          −
-        </button>
-        <button 
-          className={styles.controlBtn}
-          onClick={() => {
-            if (containerRef.current) {
-              const { width, height } = containerRef.current.getBoundingClientRect();
-              setTransform({ x: width / 2, y: height / 2, scale: 1 });
-            }
-          }}
-        >
-          ⟲
-        </button>
+        <button className={styles.controlBtn} aria-label="放大" onClick={() => setTransform(prev => ({ ...prev, scale: Math.min(3, prev.scale * 1.2) }))}>+</button>
+        <button className={styles.controlBtn} aria-label="缩小" onClick={() => setTransform(prev => ({ ...prev, scale: Math.max(0.3, prev.scale * 0.8) }))}>−</button>
+        <button className={styles.controlBtn} aria-label="重置画布" onClick={() => setTransform({ x: 0, y: 0, scale: 1 })}>⟲</button>
       </div>
     </div>
-  );
+  )
+}
+
+function annotationPosition(annotation: Annotation, x: number, y: number): { x: number; y: number; anchor: string } {
+  switch (annotation.position) {
+    case 'top': return { x: x + CELL_SIZE / 2, y: y - 20, anchor: 'middle' }
+    case 'bottom': return { x: x + CELL_SIZE / 2, y: y + CELL_SIZE + 15, anchor: 'middle' }
+    case 'left': return { x: x - 10, y: y + CELL_SIZE / 2, anchor: 'end' }
+    case 'right': return { x: x + CELL_SIZE + 10, y: y + CELL_SIZE / 2, anchor: 'start' }
+  }
 }

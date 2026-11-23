@@ -1,76 +1,10 @@
-.container {
-  position: relative;
-  flex: 1;
-  background: var(--bg-color);
-  overflow: hidden;
-  cursor: grab;
-}
-
-.container:active {
-  cursor: grabbing;
-}
-
-.svg {
-  width: 100%;
-  height: 100%;
-}
-
-.description {
-  position: absolute;
-  bottom: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-width: 80%;
-}
-
-.stepNum {
-  padding: 4px 10px;
-  background: var(--primary-color);
-  color: white;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.stepText {
-  font-size: 14px;
-  color: var(--text-color);
-}
-
-.controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.controlBtn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 18px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.controlBtn:hover {
-  background: var(--highlight-color);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
+.container { position: relative; display: flex; flex: 1; min-width: 0; min-height: 0; flex-direction: column; overflow: hidden; background-color: #fbfcfa; background-image: linear-gradient(#dce9e2 1px, transparent 1px), linear-gradient(90deg, #dce9e2 1px, transparent 1px); background-position: center center; background-size: 24px 24px; cursor: grab; }
+.container:active { cursor: grabbing; }
+.svg { width: 100%; height: 100%; min-height: 0; flex: 1; }
+.description { position: absolute; bottom: 12px; left: 50%; display: flex; max-width: calc(100% - 120px); align-items: center; gap: 8px; transform: translateX(-50%); padding: 7px 11px; border: 1px solid #dce4df; border-radius: 6px; background: #fbfcfaed; box-shadow: 0 2px 8px #20352a0d; }
+.stepNum { padding: 4px 7px; border-radius: 4px; background: #128568; color: white; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.stepText { color: #26372f; font-size: 11px; line-height: 1.45; }
+.controls { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; }
+.controlBtn { display: flex; width: 30px; height: 30px; align-items: center; justify-content: center; border: 1px solid #dce4df; border-radius: 4px; background: #fbfcfaed; color: #46594f; font-size: 17px; }
+.controlBtn:hover { border-color: #128568; color: #128568; }
+@media (max-width: 680px) { .container { background-size: 18px 18px; } .description { bottom: 8px; max-width: calc(100% - 72px); padding: 6px 8px; } .stepText { font-size: 10px; } .controls { top: 6px; right: 6px; } .controlBtn { width: 26px; height: 26px; } }

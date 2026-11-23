@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import styles from './WeChatFloat.module.css';
 
-const WECHAT_QR_URL = 'https://cdn.jsdelivr.net/gh/JSREI/.github/profile/README.assets/image-20231030132026541-7614065.png';
+const WECHAT_QR_URL = `${import.meta.env.BASE_URL}assets/qrcode-community.png`;
 
 export function WeChatFloat() {
   const [showQR, setShowQR] = useState(false);

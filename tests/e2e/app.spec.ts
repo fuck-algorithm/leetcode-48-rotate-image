@@ -1,0 +1,75 @@
+import { expect, test } from '@playwright/test'
+
+test('production entry renders the matrix visualization and local assets', async ({ page }) => {
+  const pageErrors: string[] = []
+  page.on('pageerror', error => pageErrors.push(error.message))
+  await page.goto('./')
+  await expect(page.getByRole('link', { name: '48. 旋转图像' })).toBeVisible()
+  await expect(page.getByText('原矩阵', { exact: true })).toBeVisible()
+  await expect(page.getByText('辅助矩阵 (matrixNew)', { exact: true })).toBeVisible()
+  await expect(page.getByText('初始化：获取矩阵大小 n = 3')).toBeVisible()
+  await expect(page.locator('.layer-nodes .matrix-cell')).toHaveCount(18)
+  await page.getByText('交流群').hover()
+  const qrImage = page.locator('img[alt="微信二维码"]')
+  await expect(qrImage).toHaveAttribute('src', /assets\/qrcode-community\.png$/)
+  await expect(qrImage).toHaveJSProperty('complete', true)
+  await expect.poll(() => pageErrors).toEqual([])
+})
+
+test('algorithm tabs, stepping, playback, and language selection work', async ({ page }) => {
+  await page.goto('./')
+  const narration = page.locator('[class*="stepText"]')
+  const initialNarration = await narration.textContent()
+  await page.getByRole('button', { name: /原地旋转法/ }).click()
+  await expect(narration).not.toHaveText(initialNarration ?? '')
+  await page.getByRole('button', { name: /Python/ }).click()
+  await expect(page.locator('[class*="lineContent"]').filter({ hasText: 'def rotate(self, matrix:' })).toBeVisible()
+  await page.getByRole('button', { name: '下一步' }).click()
+  await expect(page.getByText('2 /')).toBeVisible()
+  await page.keyboard.press('Space')
+  await expect(page.getByRole('button', { name: '暂停' })).toBeVisible()
+  await page.keyboard.press('Space')
+  await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible()
+})
+
+test('valid and invalid matrix inputs are handled without crashing', async ({ page }) => {
+  await page.goto('./')
+  const input = page.getByPlaceholder('例如: [[1,2,3],[4,5,6],[7,8,9]]')
+  await input.fill('[[1,2],[3,4]]')
+  await page.getByRole('button', { name: '应用' }).click()
+  await expect(page.locator('.layer-nodes .matrix-cell')).toHaveCount(8)
+  await input.fill('not a matrix')
+  await page.getByRole('button', { name: '应用' }).click()
+  await expect(page.getByText('无法解析输入，请使用正确的格式')).toBeVisible()
+  await expect(page.locator('.layer-nodes .matrix-cell')).toHaveCount(8)
+})
+
+test('matrix cells retain stable keyed elements when stepping through a rotation', async ({ page }) => {
+  await page.goto('./')
+  const cells = page.locator('.layer-nodes .matrix-cell')
+  await expect(cells).toHaveCount(18)
+  const ids = await cells.evaluateAll(elements => elements.map(element => element.getAttribute('data-node-id')))
+  await page.getByRole('button', { name: '下一步' }).click()
+  await expect(page.getByText('2 /')).toBeVisible()
+  await expect(cells).toHaveCount(18)
+  await expect.poll(() => cells.evaluateAll(elements => elements.map(element => element.getAttribute('data-node-id')))).toEqual(ids)
+})
+
+test('mobile layout keeps the canvas and playback controls on screen', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('./')
+  await expect(page.getByText('原矩阵', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible()
+  const dimensions = await page.evaluate(() => ({ viewport: window.innerHeight, content: document.documentElement.scrollHeight }))
+  expect(dimensions.content).toBeLessThanOrEqual(dimensions.viewport)
+})
+
+test('keyed matrix elements have stable IDs and step operations retain visible focus', async ({ page }) => {
+  await page.goto('./')
+  const cells = page.locator('.layer-nodes .matrix-cell')
+  await expect(cells.first()).toHaveAttribute('data-node-id', 'main-0-0')
+  await page.getByRole('button', { name: '下一步' }).click()
+  await expect(page.getByText('2 /')).toBeVisible()
+  await expect(cells).toHaveCount(18)
+  await expect(cells.first()).toHaveAttribute('data-node-id', 'main-0-0')
+})

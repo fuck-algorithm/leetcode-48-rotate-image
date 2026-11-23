@@ -28,10 +28,22 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run type-check
 
       - name: Build
         run: npm run build
+
+      - name: Run browser acceptance tests
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

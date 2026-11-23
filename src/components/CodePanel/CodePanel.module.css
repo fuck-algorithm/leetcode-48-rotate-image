@@ -2,7 +2,6 @@
   display: flex;
   flex-direction: column;
   background: var(--code-bg);
-  border-radius: 6px;
   overflow: hidden;
   height: 100%;
 }
@@ -11,15 +10,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: #21252b;
-  border-bottom: 1px solid #181a1f;
+  min-height: 38px;
+  padding: 4px 8px;
+  background: #1b2a25;
+  border-bottom: 1px solid #2b3b34;
 }
 
 .title {
   font-size: 13px;
   font-weight: 500;
-  color: #abb2bf;
+  color: #d1ded7;
 }
 
 .languageTabs {
@@ -44,9 +44,9 @@
 }
 
 .langTab.active {
-  color: #61afef;
-  background: #2c313a;
-  border-color: #61afef;
+  color: #91d9c1;
+  background: #243a31;
+  border-color: #4b9d7d;
 }
 
 .codeContainer {
@@ -57,7 +57,7 @@
 
 .code {
   margin: 0;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: 'DM Mono', 'Monaco', 'Menlo', monospace;
   font-size: 13px;
   line-height: 1.6;
 }
@@ -71,8 +71,8 @@
 }
 
 .line.highlighted {
-  background: rgba(97, 175, 239, 0.15);
-  border-left: 3px solid #61afef;
+  background: rgba(57, 153, 117, 0.19);
+  border-left: 3px solid #55b28d;
   padding-left: 9px;
 }
 
@@ -86,7 +86,7 @@
 }
 
 .line.highlighted .lineNumber {
-  color: #61afef;
+  color: #79c5a2;
 }
 
 .lineContent {

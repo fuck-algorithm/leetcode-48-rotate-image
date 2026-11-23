@@ -121,7 +121,7 @@ export function PlaybackControls({
   return (
     <div className={styles.container}>
       <div className={styles.buttons}>
-        <button className={styles.btn} onClick={onPrev} title="上一步 (←)">
+        <button className={styles.btn} onClick={onPrev} title="上一步 (←)" aria-label="上一步">
           ⏮ <span className={styles.shortcut}>←</span>
         </button>
         
@@ -129,21 +129,23 @@ export function PlaybackControls({
           className={`${styles.btn} ${styles.playBtn}`} 
           onClick={state.isPlaying ? onPause : onPlay}
           title={state.isPlaying ? '暂停 (空格)' : '播放 (空格)'}
+          aria-label={state.isPlaying ? '暂停' : '播放'}
         >
           {state.isPlaying ? '⏸' : '▶'} <span className={styles.shortcut}>空格</span>
         </button>
         
-        <button className={styles.btn} onClick={onNext} title="下一步 (→)">
+        <button className={styles.btn} onClick={onNext} title="下一步 (→)" aria-label="下一步">
           ⏭ <span className={styles.shortcut}>→</span>
         </button>
         
-        <button className={styles.btn} onClick={onReset} title="重置 (R)">
+        <button className={styles.btn} onClick={onReset} title="重置 (R)" aria-label="重置">
           ⟲ <span className={styles.shortcut}>R</span>
         </button>
 
         <div className={styles.speedControl}>
           <button 
             className={styles.speedBtn}
+            aria-label="播放速度"
             onClick={() => setShowSpeedMenu(!showSpeedMenu)}
           >
             {state.speed}x ▾

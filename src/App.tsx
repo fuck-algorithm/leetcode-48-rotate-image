@@ -149,17 +149,17 @@ function App() {
       <AlgorithmTabs currentAlgorithm={algorithm} onAlgorithmChange={handleAlgorithmChange} />
       
       <div className={styles.main}>
+        <div className={styles.canvasSection}>
+          <Canvas step={currentStep} showAuxiliary={showAuxiliary} />
+        </div>
+
         <div className={styles.codeSection}>
-          <CodePanel 
-            algorithm={algorithm} 
+          <CodePanel
+            algorithm={algorithm}
             highlightLines={highlightLines}
             variables={currentStep.variables}
           />
           <VariablesPanel variables={currentStep.variables} />
-        </div>
-        
-        <div className={styles.canvasSection}>
-          <Canvas step={currentStep} showAuxiliary={showAuxiliary} />
         </div>
       </div>
       
